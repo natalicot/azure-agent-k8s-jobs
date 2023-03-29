@@ -1,0 +1,32 @@
+
+# Azure agents container repo and tag
+image:
+  repository: "239071824248.dkr.ecr.eu-west-1.amazonaws.com/general-azure-agent"
+  tag: "0ff30a1b8a59eb7d0f8018821cbf11226b51af60"
+
+# Agent resources
+resources:
+  requests:
+    memory: "100Mi"
+    cpu: "700m"
+
+# Azure devops PAT token - base64 encoded: `echo -ne "<MY_TOKEN>" | base64`
+AZP_TOKEN: 
+
+# Azure devops pool name - base64 encoded: 'k8s-general-agent'
+AZP_POOL: azhzLWdlbmVyYWwtYWdlbnQ=
+
+# Azure devops URL - base64 encoded: 'https://dev.azure.com/<YOURORG>'
+AZP_URL: "aHR0cHM6Ly9kZXYuYXp"
+
+# Azure devops pool ID: You can get pool ID only be Azure devops API: https://dev.azure.com/<YOURORG>/_apis/distributedtask/pools?api-version=6.0
+poolID: '36'
+
+# IAM role for the agent
+agent_role_arn: 
+
+# Agents Specifications
+maxReplicaCount: 100
+failedJobsHistoryLimit: 5
+successfulJobsHistoryLimit: 5 
+pollingInterval: 30

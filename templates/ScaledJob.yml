@@ -1,0 +1,66 @@
+apiVersion: keda.sh/v1alpha1
+kind: ScaledJob
+metadata:
+  name: {{ .Release.Name }}
+spec:
+  jobTargetRef:
+    template:
+      metadata:
+        annotations:
+          kubernetes.io/service-account.name: {{ .Release.Name }}
+        labels:
+          app: {{ .Release.Name }}
+      spec:
+        containers:
+        - name: {{ .Release.Name }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          securityContext:
+            privileged: true
+          resources:
+              {{- toYaml .Values.resources | nindent 12 }}
+          volumeMounts:
+            - mountPath: /var/run # Mount docker socket
+              name: docker-sock
+          env:
+          - name: AZP_URL # Azure devops URL for Authentication
+            value: 'https://dev.azure.com/<YOURORG>'
+          - name: AZP_TOKEN # Azure devops TOKEN for Authentication
+            valueFrom:
+              secretKeyRef:
+                name: {{ .Release.Name }}
+                key: AZP_TOKEN
+          - name: AZP_POOL # Azure devops Agent pool name
+            valueFrom:
+              secretKeyRef:
+                name: {{ .Release.Name }}
+                key: AZP_POOL
+        serviceAccountName: {{ .Release.Name }}
+        volumes:
+          - name: docker-sock
+            hostPath:
+              path: /var/run
+        tolerations:  # Azure agents are the only ones to run on this node group
+          - key: "azure-agent"
+            operator: Equal
+            value: "true"
+        affinity: # Azure agent can run only on this node group
+          nodeAffinity:
+            requiredDuringSchedulingIgnoredDuringExecution:
+              nodeSelectorTerms:
+                - matchExpressions:
+                    - key: instance.type
+                      operator: In
+                      values:
+                        - agents
+  pollingInterval: {{ .Values.pollingInterval }}
+  successfulJobsHistoryLimit: {{ .Values.successfulJobsHistoryLimit }}
+  failedJobsHistoryLimit: {{ .Values.failedJobsHistoryLimit }}
+  maxReplicaCount: {{ .Values.maxReplicaCount }}
+  scalingStrategy:
+    strategy: "default"
+  triggers:
+    - type: azure-pipelines
+      metadata:
+        poolID: '{{ .Values.poolID }}'
+        organizationURLFromEnv: "AZP_URL"
+        personalAccessTokenFromEnv: "AZP_TOKEN"
